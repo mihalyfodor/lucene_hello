@@ -64,4 +64,12 @@ public class LuceneHelloController {
         }
     }
 
+    @PostMapping("search")
+    public ResponseEntity<List<LuceneHelloDocument>> searchDocument(@RequestBody LuceneHelloSearch luceneHelloSearch) {
+        try {
+            return new ResponseEntity<>(luceneHelloService.searchDocuments(luceneHelloSearch.getField(), luceneHelloSearch.getQuery()), HttpStatus.OK);
+        } catch (IOException | ParseException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
