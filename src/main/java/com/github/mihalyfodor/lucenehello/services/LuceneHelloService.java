@@ -8,6 +8,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * This service provides an abstraction of the underlying lucene logic, in order to minimize business logic
+ * in the controller itself.
+ */
 @Service
 public class LuceneHelloService {
 
