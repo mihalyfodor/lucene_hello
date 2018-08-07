@@ -1,5 +1,6 @@
 package com.github.mihalyfodor.lucenehello.controllers;
 
+import com.github.mihalyfodor.lucenehello.models.LuceneAdvancedSearch;
 import com.github.mihalyfodor.lucenehello.models.LuceneHelloDocument;
 import com.github.mihalyfodor.lucenehello.models.LuceneHelloSearch;
 import com.github.mihalyfodor.lucenehello.services.LuceneHelloService;
@@ -68,6 +69,15 @@ public class LuceneHelloController {
     public ResponseEntity<List<LuceneHelloDocument>> searchDocument(@RequestBody LuceneHelloSearch luceneHelloSearch) {
         try {
             return new ResponseEntity<>(luceneHelloService.searchDocuments(luceneHelloSearch.getField(), luceneHelloSearch.getQuery()), HttpStatus.OK);
+        } catch (IOException | ParseException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("advancedsearch")
+    public ResponseEntity<List<LuceneHelloDocument>> advancedSearchDocument(@RequestBody LuceneAdvancedSearch luceneAdvancedSearch) {
+        try {
+            return new ResponseEntity<>(luceneHelloService.advancedSearchDocuments(luceneAdvancedSearch.getField(), luceneAdvancedSearch.getSearchType(), luceneAdvancedSearch.getQuery()), HttpStatus.OK);
         } catch (IOException | ParseException e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

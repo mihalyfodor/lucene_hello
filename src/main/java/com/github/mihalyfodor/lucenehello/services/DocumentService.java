@@ -1,21 +1,30 @@
 package com.github.mihalyfodor.lucenehello.services;
 
+import com.github.mihalyfodor.lucenehello.models.SearchType;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.PhraseQuery;
+import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.util.BytesRef;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.annotation.SessionScope;
 
@@ -55,10 +64,9 @@ public class DocumentService {
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
         try (IndexWriter writer = new IndexWriter(memoryIndex, indexWriterConfig)) {
             Document document = new Document();
-
             document.add(new TextField("title", title, Field.Store.YES));
             document.add(new TextField("body", body, Field.Store.YES));
-
+            document.add(new SortedDocValuesField("title", new BytesRef(title)));
             writer.addDocument(document);
         }
     }
@@ -86,5 +94,46 @@ public class DocumentService {
 
         return documents;
     }
+
+    /**
+     * Building on top of the previous search we can also specify the type of search we want to do.
+     *
+     * @param inField field to search
+     * @param type the type of the search
+     * @param queryString query expression to use
+     * @return found documents
+     *
+     * @throws ParseException when an error occurs
+     * @throws IOException when an error occurs
+     */
+    public List<Document> searchIndex(String inField, SearchType type, String queryString)  throws ParseException, IOException {
+
+        Term term = new Term(inField, queryString);
+        switch(type) {
+            // term is the most basic one, it just goes after the word given
+            case TERM: return searchIndex(new TermQuery(term));
+            // prefix is the starts with search
+            case PREFIX: return searchIndex(new PrefixQuery(term));
+            // wildcard allows for * and ?
+            case WILDCARD: return searchIndex(new WildcardQuery(term));
+            // fuzzy is searching for similar results, not necessarily identical
+            case FUZZY: return searchIndex(new FuzzyQuery(term));
+            // as backup
+            default: return searchIndex(inField, queryString);
+        }
+
+    }
+
+    private List<Document> searchIndex(Query query) throws IOException {
+        IndexReader indexReader = DirectoryReader.open(memoryIndex);
+        IndexSearcher searcher = new IndexSearcher(indexReader);
+        TopDocs topDocs = searcher.search(query, NUMBER_OF_TOP_MATCHES);
+        List<Document> documents = new ArrayList<>();
+        for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+            documents.add(searcher.doc(scoreDoc.doc));
+        }
+        return documents;
+    }
+
 
 }

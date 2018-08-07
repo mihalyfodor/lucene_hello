@@ -1,6 +1,7 @@
 package com.github.mihalyfodor.lucenehello.services;
 
 import com.github.mihalyfodor.lucenehello.models.LuceneHelloDocument;
+import com.github.mihalyfodor.lucenehello.models.SearchType;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +36,22 @@ public class LuceneHelloService {
         return documentService.searchIndex(field, text)
                 .stream()
                 .map(e -> new LuceneHelloDocument(e.get("title"), e.get("text")))
+                .collect(Collectors.toList());
+    }
+
+    public List<LuceneHelloDocument> advancedSearchDocuments(String field, String type, String text) throws IOException, ParseException {
+
+        SearchType searchType;
+
+        try {
+            searchType = SearchType.valueOf(type);
+        } catch (NullPointerException | IllegalArgumentException e) {
+            searchType = SearchType.OTHER;
+        }
+
+        return documentService.searchIndex(field, searchType, text)
+                .stream()
+                .map(e -> new LuceneHelloDocument(e.get("title"), e.get("body")))
                 .collect(Collectors.toList());
     }
 }
